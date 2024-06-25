@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Habit {
+  id            Int      @id @default(autoincrement())
+  name          String
+  type          String
+  timesPerDay   Int?
+  missesAllowed Int?
+  timeGoal      Int?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  logs          Log[]
+}
+
+model Log {
+  id      Int      @id @default(autoincrement())
+  habitId Int
+  date    DateTime @default(now())
+  value   Float?
+  notes   String?
+  habit   Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+}
