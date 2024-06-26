@@ -8,15 +8,16 @@
 :root {
   --bg-color: #e8e9ec;
   --caret-color: #262a3f;
-  --main-color: #2d539e; /* This will be used for main text color */
-  --main-bg-color: #2d539e; /* This will be used for main background color */
-  --sub-color: #adb1c4; /* This will be used for sub text color */
+  --main-color: #2d539e; /* Main text color */
+  --main-bg-color: #2d539e; /* Main background color */
+  --sub-color: #adb1c4; /* Sub text color */
   --sub-alt-color: #ccceda;
-  --text-color: #33374c;
+  --text-color: #2d539e;;
   --error-color: #cc517a;
   --error-extra-color: #cc3768;
   --colorful-error-color: #cc517a;
   --colorful-error-extra-color: #cc3768;
+  --add-habit-text-color: #e8e9ec;
 }
 
 /* Apply custom theme colors */
@@ -28,11 +29,12 @@ body {
 
 button {
   background-color: var(--main-bg-color);
-  color: var(--sub-color);
+  color: var(--bg-color);
 }
 
+
 h1, h2, h3, h4, h5, h6, p, span, ul, li {
-  color: var(--main-color);
+  color: var(--text-color);
 }
 
 input[type="checkbox"]:checked {
@@ -43,9 +45,6 @@ input[type="checkbox"]:checked {
   transition: transform 0.2s, border-radius 0.2s, background-color 0.2s;
 }
 
-
-
-/* globals.css */
 #trash-bin {
   color: var(--main-color);
   margin-left: 10px;
@@ -69,36 +68,11 @@ input[type="checkbox"]:checked {
   transition: transform 0.2s ease;
 }
 
-input[type="range"] {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 10px;
-  background: var(--sub-color);
-  outline: none;
-  opacity: 0.7;
-  -webkit-transition: .2s;
-  transition: opacity .2s;
-  border-radius: 5px;
-}
-
-input[type="range"]:hover {
-  opacity: 1;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  background: var(--main-bg-color);
-  cursor: pointer;
-  border-radius: 50%;
-}
-
-input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  background: var(--main-bg-color);
-  cursor: pointer;
-  border-radius: 50%;
+@keyframes moveStripes {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 40px 0;
+  }
 }

@@ -1,9 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import AddHabitModal from './components/AddHabitModal';
 import HabitStats from './components/HabitStats';
+import Confetti from './components/Confetti';
+import { FaCheck, FaTimes, FaClock, FaCrown, FaTrophy } from 'react-icons/fa';
+import { IoMdAdd, IoMdClose } from 'react-icons/io';
+
 
 export default function Home() {
   const [habits, setHabits] = useState([]);
@@ -11,6 +15,9 @@ export default function Home() {
   const [selectedHabit, setSelectedHabit] = useState(null);
   const [deleteMode, setDeleteMode] = useState(false);
   const today = format(new Date(), 'dd MMM yy');
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [showCongrats, setShowCongrats] = useState(false);
+  
 
   useEffect(() => {
     fetchHabits();
@@ -79,21 +86,22 @@ export default function Home() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Failed to delete habit: ${errorData.error || response.statusText}`);
+        const errorText = await response.text();
+        console.error('Server response:', errorText);
+        throw new Error(`Failed to delete habit: ${response.statusText}`);
       }
       
-      const deletedHabit = await response.json();
-      console.log('Deleted habit:', deletedHabit);
-      
-      setHabits(habits.filter(h => h.id !== habitId));
+      setHabits(prevHabits => prevHabits.filter(h => h.id !== habitId));
+      // Remove this line to keep delete mode active
+      // setDeleteMode(false);
     } catch (error) {
       console.error('Error in deleteHabit:', error);
       alert(`Failed to delete habit. ${error.message}`);
     }
   };
+  
 
-  const calculateOverallProgress = () => {
+  const calculateOverallProgress = useCallback(() => {
     let completedTasks = 0;
     let totalTasks = habits.length;
   
@@ -118,76 +126,102 @@ export default function Home() {
       }
     });
   
-    const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-    return { completedTasks, totalTasks, progressPercentage };
+      const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+      return { completedTasks, totalTasks, progressPercentage };
+  }, [habits]);
+
+  useEffect(() => {
+    const { progressPercentage } = calculateOverallProgress();
+    if (progressPercentage === 100) {
+      triggerCelebration();
+    }
+  }, [calculateOverallProgress]);
+
+  const triggerCelebration = () => {
+    setShowConfetti(true);
+    setShowCongrats(true);
+    setTimeout(() => {
+      setShowConfetti(false);
+    }, 5000); // 5 seconds of confetti
+  };
+
+  const triggerConfetti = () => {
+    setShowConfetti(true);
+    setTimeout(() => {
+      setShowConfetti(false);
+    }, 5000); // 5 seconds of confetti
   };
 
   const getHabitProgress = (habit) => {
-  const today = new Date().toISOString().split('T')[0];
-  const todayLogs = habit.logs?.filter(log => 
-    new Date(log.date).toISOString().split('T')[0] === today
-  ) || [];
-
-  const completions = todayLogs.reduce((sum, log) => sum + (log.value || 0), 0);
-
-  switch (habit.type) {
-    case 'habit':
-      const maxCompletions = habit.timesPerDay || 1;
-      const progressPercentage = Math.min((completions / maxCompletions) * 100, 100);
-      return (
-        <div>
-          <span>{completions}/{maxCompletions}</span>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-1">
-            <div 
-              className="bg-blue-600 h-2.5 rounded-full" 
-              style={{ width: `${progressPercentage}%` }}
-            ></div>
-          </div>
-        </div>
-      );
-    case 'timed_habit':
-      const timeGoal = habit.timeGoal || 0;
-      const timeProgressPercentage = Math.min((completions / timeGoal) * 100, 100);
-      return (
-        <div>
-          <span>{completions}/{timeGoal} minutes</span>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-1">
-            <div 
-              className="bg-green-600 h-2.5 rounded-full" 
-              style={{ width: `${timeProgressPercentage}%` }}
-            ></div>
-          </div>
-        </div>
-      );
-    case 'bad_habit':
-      const maxOccurrences = habit.missesAllowed || 1;
-      const badHabitPercentage = Math.min((completions / maxOccurrences) * 100, 100);
-      return (
-        <div>
-          <span>{completions}/{maxOccurrences} occurrences</span>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-1">
-            <div 
-              className="bg-red-600 h-2.5 rounded-full" 
-              style={{ width: `${badHabitPercentage}%` }}
-            ></div>
-          </div>
-        </div>
-      );
-    default:
-      return null;
-  }
-};
-
-  const getHabitIcon = (habitType) => {
-    switch (habitType) {
+    const today = new Date().toISOString().split('T')[0];
+    const todayLogs = habit.logs?.filter(log => 
+      new Date(log.date).toISOString().split('T')[0] === today
+    ) || [];
+  
+    const completions = todayLogs.reduce((sum, log) => sum + (log.value || 0), 0);
+  
+    const getProgressBarStyle = (percentage, isTimedOrBadHabit) => {
+      if (isTimedOrBadHabit) {
+        return `linear-gradient(-45deg, var(--main-color) 25%, ${isTimedOrBadHabit === 'timed' ? '#4CAF50' : '#F44336'} 25%, ${isTimedOrBadHabit === 'timed' ? '#4CAF50' : '#F44336'} 50%, var(--main-color) 50%, var(--main-color) 75%, ${isTimedOrBadHabit === 'timed' ? '#4CAF50' : '#F44336'} 75%)`;
+      }
+      return 'var(--main-color)';
+    };
+  
+    switch (habit.type) {
       case 'habit':
-        return '✅'; // Checkmark for normal habits
+        const maxCompletions = habit.timesPerDay || 1;
+        const progressPercentage = Math.min((completions / maxCompletions) * 100, 100);
+        return (
+          <div>
+            <span>{completions}/{maxCompletions}</span>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-1">
+              <div 
+                className="h-2.5 rounded-full" 
+                style={{ width: `${progressPercentage}%`, backgroundColor: getProgressBarStyle(progressPercentage) }}
+              ></div>
+            </div>
+          </div>
+        );
       case 'timed_habit':
-        return '⏱️'; // Stopwatch for timed habits
+        const timeGoal = habit.timeGoal || 0;
+        const timeProgressPercentage = Math.min((completions / timeGoal) * 100, 100);
+        return (
+          <div>
+            <span>{completions}/{timeGoal} minutes</span>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-1">
+              <div 
+                className="h-2.5 rounded-full" 
+                style={{ 
+                  width: `${timeProgressPercentage}%`, 
+                  backgroundImage: getProgressBarStyle(timeProgressPercentage, 'timed'), 
+                  backgroundSize: '40px 40px',
+                  animation: 'moveStripes 1s linear infinite'
+                }}
+              ></div>
+            </div>
+          </div>
+        );
       case 'bad_habit':
-        return '❌'; // X for bad habits
+        const maxOccurrences = habit.missesAllowed || 1;
+        const badHabitPercentage = Math.min((completions / maxOccurrences) * 100, 100);
+        return (
+          <div>
+            <span>{completions}/{maxOccurrences} occurrences</span>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-1">
+              <div 
+                className="h-2.5 rounded-full" 
+                style={{ 
+                  width: `${badHabitPercentage}%`, 
+                  backgroundImage: getProgressBarStyle(badHabitPercentage, 'bad'), 
+                  backgroundSize: '40px 40px',
+                  animation: 'moveStripes 1s linear infinite'
+                }}
+              ></div>
+            </div>
+          </div>
+        );
       default:
-        return '';
+        return null;
     }
   };
 
@@ -378,47 +412,50 @@ export default function Home() {
           ></div>
         </div>
       </div>
-
       <ul className="max-w-md mx-auto mt-6 space-y-4">
         {habits.map((habit) => {
-    console.log('Rendering habit:', habit); // Log each habit being rendered
-    const habitClass = 'text-var(--main-color)';
-    const deleteClass = deleteMode ? 'text-red-500 cursor-pointer' : '';
-
-    return (
-      <li
-        key={habit.id}
-        className={`p-4 bg-white rounded-lg shadow-md ${habitClass} ${deleteClass} habit-item`}
-        onClick={() => deleteMode && deleteHabit(habit.id)}
-      >
-        <div className="flex justify-between items-center">
-          <span className="text-lg font-semibold cursor-pointer flex items-center">
-            {getHabitIcon(habit.type)}
-            <span className="ml-2">{habit.name}</span>
-          </span>
-          {!deleteMode && getHabitInput(habit)}
-        </div>
-        <div className="mt-2">
-          <span className="text-sm font-medium">{getHabitProgress(habit)}</span>
-        </div>
-      </li>
-    );
-  })}
+          const habitIcon = habit.type === 'habit' ? <FaCheck className={`${deleteMode ? 'text-white' : 'text-[var(--main-color)]'}`} /> :
+                            habit.type === 'bad_habit' ? <FaTimes className={`${deleteMode ? 'text-white' : 'text-[var(--error-color)]'}`} /> :
+                            <FaClock className={`${deleteMode ? 'text-white' : 'text-[var(--main-color)]'}`} />;
+          
+          return (
+              <li
+                key={habit.id}
+                className={`p-4 rounded-lg shadow-md text-[var(--text-color)] habit-item cursor-pointer
+                            ${deleteMode ? 'bg-red-500 hover:bg-red-600' : 'bg-white'}`}
+                onClick={() => deleteMode ? deleteHabit(habit.id) : setSelectedHabit(habit)}
+              >
+              <div className="flex justify-between items-center">
+                <span className={`text-lg font-semibold flex items-center ${deleteMode ? 'text-white' : ''}`}>
+                  {habitIcon}
+                  <span className="ml-2">{habit.name}</span>
+                </span>
+                {!deleteMode && getHabitInput(habit)}
+              </div>
+              {!deleteMode && (
+                <div className="mt-2">
+                  <span className="text-sm font-medium">{getHabitProgress(habit)}</span>
+                </div>
+              )}
+            </li>
+          );
+        })}
       </ul>
   
       <div className="max-w-md mx-auto flex justify-center items-center mt-6">
         {!deleteMode && (
           <button 
             onClick={() => setIsModalOpen(true)} 
-            className="px-4 py-2 bg-var(--main-bg-color) text-var(--sub-color) rounded-full shadow-md hover:bg-opacity-90 transition-colors duration-200"
+            className="px-4 py-2 bg-[var(--main-color)] text-white rounded-full shadow-md hover:bg-opacity-90 transition-colors duration-200 flex items-center"
           >
+            <IoMdAdd className="mr-2" />
             Add Habit 
           </button>
         )}
 
         <button 
           onClick={() => setDeleteMode(!deleteMode)} 
-          className={`px-4 py-2 ${deleteMode ? 'bg-red-500' : 'bg-var(--main-bg-color)'} text-var(--sub-color) rounded-full shadow-md hover:bg-opacity-90 transition-colors duration-200 ml-4`}
+          className={`px-4 py-2 ${deleteMode ? 'bg-[var(--error-color)]' : 'bg-[var(--main-color)]'} text-white rounded-full shadow-md hover:bg-opacity-90 transition-colors duration-200 ml-4 flex items-center`}
         >
           {deleteMode ? 'Done' : 'Delete'}
         </button>
@@ -437,6 +474,42 @@ export default function Home() {
           onClose={() => setSelectedHabit(null)}
           updateHabit={updateHabit}
         />
+      )}
+      {showConfetti && (
+        <Confetti 
+          mainColor={getComputedStyle(document.documentElement).getPropertyValue('--main-color').trim()} 
+        />
+      )}
+      
+      {showCongrats && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+          <div className="bg-white p-8 rounded-lg shadow-xl max-w-md text-center relative">
+            <button 
+              onClick={() => setShowCongrats(false)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              aria-label="Close"
+            >
+              <IoMdClose size={24} />
+            </button>
+            <FaTrophy className="text-yellow-400 text-5xl mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-green-600 mb-4">All done for today!</h2>
+            <p className="text-lg text-gray-700 mb-6">
+            Congratulations! You've completed all your habits for today.
+            </p>
+            <p className="text-lg text-gray-700 mb-6">
+              Enjoy and rest up - let's do this again tomorrow!
+            </p>
+            
+            <button 
+              onClick={triggerConfetti}
+              className="px-4 py-2 bg-yellow-400 text-blue-600 rounded-full shadow-md hover:bg-yellow-300 transition-colors duration-200 flex items-center justify-center mx-auto"
+              title="Celebrate again!"
+            >
+              <FaCrown size={20} className="mr-2" />
+              Celebrate!
+            </button>
+          </div>
+        </div>
       )}
     </main>
   );

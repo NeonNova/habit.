@@ -97,8 +97,6 @@ export async function DELETE(request) {
   }
 }
 
-
-
 export async function PATCH(request) {
   try {
     const data = await request.json();
