@@ -1,8 +1,8 @@
 # habits.
 
-![Habit Tracker Screenshot](screenshot2.jpeg)
+A sleek and minimalist habit-tracking application built with Next.js and React.
 
-A sleek and minimalist habit tracking application built with Next.js and React.
+![Habit Tracker Screenshot](screenshot2.jpeg)
 
 ## 🌟 Features
 

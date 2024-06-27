@@ -1,15 +1,17 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSession } from "next-auth/react";
 import { format } from 'date-fns';
 import AddHabitModal from './components/AddHabitModal';
 import HabitStats from './components/HabitStats';
 import Confetti from './components/Confetti';
+import LoginButton from './components/LoginButton';
 import { FaCheck, FaTimes, FaClock, FaCrown, FaTrophy } from 'react-icons/fa';
 import { IoMdAdd, IoMdClose } from 'react-icons/io';
 
-
 export default function Home() {
+  const { data: session, status } = useSession();
   const [habits, setHabits] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedHabit, setSelectedHabit] = useState(null);
@@ -17,11 +19,12 @@ export default function Home() {
   const today = format(new Date(), 'dd MMM yy');
   const [showConfetti, setShowConfetti] = useState(false);
   const [showCongrats, setShowCongrats] = useState(false);
-  
 
   useEffect(() => {
-    fetchHabits();
-  }, []);
+    if (session) {
+      fetchHabits();
+    }
+  }, [session]);
 
   const fetchHabits = async () => {
     try {
@@ -392,120 +395,173 @@ export default function Home() {
   const { completedTasks, totalTasks, progressPercentage } = calculateOverallProgress();
   
   return (
-    <main className="bg-var(--bg-color) text-var(--text-color) p-5 min-h-screen font-mono">
-      <h1 className="text-3xl text-center mb-2 text-var(--main-color) font-bold">habits.</h1>
-      <p className="text-center mb-4 text-var(--main-color) text-lg">{today}</p>
-      
-      {/* Overall Progress Bar */}
-      <div className="max-w-md mx-auto mb-6">
-        <div className="flex items-center justify-center mb-2">
-          <span className="text-lg font-medium">Progress: {completedTasks}/{totalTasks}</span>
+    <main className="bg-var(--bg-color) text-var(--text-color) min-h-screen font-mono relative">
+      {status === "authenticated" && (
+        <div className="absolute top-4 right-4">
+          <LoginButton />
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-          <div 
-            className="bg-blue-600 h-2.5 rounded-full" 
-            style={{ width: `${progressPercentage}%` }}
-          ></div>
-        </div>
-      </div>
-      <ul className="max-w-md mx-auto mt-6 space-y-4">
-        {habits.map((habit) => {
-          const habitIcon = habit.type === 'habit' ? <FaCheck className={`${deleteMode ? 'text-white' : 'text-[var(--main-color)]'}`} /> :
-                            habit.type === 'bad_habit' ? <FaTimes className={`${deleteMode ? 'text-white' : 'text-[var(--error-color)]'}`} /> :
-                            <FaClock className={`${deleteMode ? 'text-white' : 'text-[var(--main-color)]'}`} />;
+      )}
+      <div className="max-w-xl mx-auto px-4 py-8">
+        <h1 className="text-3xl text-center mb-2 text-var(--main-color) font-bold">habits.</h1>
+        
           
-          return (
-              <li
-                key={habit.id}
-                className={`p-4 rounded-lg shadow-md text-[var(--text-color)] habit-item cursor-pointer
-                            ${deleteMode ? 'bg-red-500 hover:bg-red-600' : 'bg-white'}`}
-                onClick={() => deleteMode ? deleteHabit(habit.id) : setSelectedHabit(habit)}
-              >
-              <div className="flex justify-between items-center">
-                <span className={`text-lg font-semibold flex items-center ${deleteMode ? 'text-white' : ''}`}>
-                  {habitIcon}
-                  <span className="ml-2">{habit.name}</span>
-                </span>
-                {!deleteMode && getHabitInput(habit)}
-              </div>
-              {!deleteMode && (
-                <div className="mt-2">
-                  <span className="text-sm font-medium">{getHabitProgress(habit)}</span>
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-  
-      <div className="max-w-md mx-auto flex justify-center items-center mt-6">
-        {!deleteMode && (
-          <button 
-            onClick={() => setIsModalOpen(true)} 
-            className="px-4 py-2 bg-[var(--main-color)] text-white rounded-full shadow-md hover:bg-opacity-90 transition-colors duration-200 flex items-center"
-          >
-            <IoMdAdd className="mr-2" />
-            Add Habit 
-          </button>
-        )}
-
-        <button 
-          onClick={() => setDeleteMode(!deleteMode)} 
-          className={`px-4 py-2 ${deleteMode ? 'bg-[var(--error-color)]' : 'bg-[var(--main-color)]'} text-white rounded-full shadow-md hover:bg-opacity-90 transition-colors duration-200 ml-4 flex items-center`}
-        >
-          {deleteMode ? 'Done' : 'Delete'}
-        </button>
-      </div>
-
-      {isModalOpen && (
-        <AddHabitModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onAddHabit={addHabit}
-        />
-      )}
-      {selectedHabit && (
-        <HabitStats
-          habit={selectedHabit}
-          onClose={() => setSelectedHabit(null)}
-          updateHabit={updateHabit}
-        />
-      )}
-      {showConfetti && (
-        <Confetti 
-          generationDuration={200} // Adjust this value as needed
-        />
-      )}
-      
-      {showCongrats && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-          <div className="bg-white p-8 rounded-lg shadow-xl max-w-md text-center relative">
-            <button 
-              onClick={() => setShowCongrats(false)}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-              aria-label="Close"
-            >
-              <IoMdClose size={24} />
-            </button>
-            <FaTrophy className="text-yellow-400 text-5xl mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-green-600 mb-4">All done for today!</h2>
-            <p className="text-lg text-gray-700 mb-6">
-              Congratulations! You've completed all your habits for today.
-            </p>
-            <p className="text-lg text-gray-700 mb-6">
-              Enjoy and rest up - let's do this again tomorrow!
-            </p>
+          {status === "authenticated" ? (
+          <>
+            <p className="text-center mb-6 text-var(--main-color) text-xl">{today}</p>
             
-            <button 
-              onClick={triggerConfetti}
-              className="px-4 py-2 bg-yellow-400 text-blue-600 rounded-full shadow-md hover:bg-yellow-300 transition-colors duration-200 flex items-center justify-center mx-auto"
-              title="Celebrate again!">
-                <FaCrown size={20} className="mr-2" />
-              Celebrate!
-            </button>
+            {/* Overall Progress Bar */}
+            <div className="mb-8">
+              <div className="flex items-center justify-center mb-2">
+                <span className="text-lg font-medium">Progress: {completedTasks}/{totalTasks}</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                <div 
+                  className="bg-blue-600 h-2.5 rounded-full" 
+                  style={{ width: `${progressPercentage}%` }}
+                ></div>
+              </div>
+            </div>
+  
+            <ul className="space-y-4 mb-8">
+              {habits.map((habit) => {
+                const habitIcon = habit.type === 'habit' ? <FaCheck className={`${deleteMode ? 'text-white' : 'text-[var(--main-color)]'}`} /> :
+                                  habit.type === 'bad_habit' ? <FaTimes className={`${deleteMode ? 'text-white' : 'text-[var(--error-color)]'}`} /> :
+                                  <FaClock className={`${deleteMode ? 'text-white' : 'text-[var(--main-color)]'}`} />;
+                
+                return (
+                  <li
+                    key={habit.id}
+                    className={`p-4 rounded-lg shadow-md text-[var(--text-color)] habit-item cursor-pointer
+                                ${deleteMode ? 'bg-red-500 hover:bg-red-600' : 'bg-white'}`}
+                    onClick={() => deleteMode ? deleteHabit(habit.id) : setSelectedHabit(habit)}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className={`text-lg font-semibold flex items-center ${deleteMode ? 'text-white' : ''}`}>
+                        {habitIcon}
+                        <span className="ml-2">{habit.name}</span>
+                      </span>
+                      {!deleteMode && getHabitInput(habit)}
+                    </div>
+                    {!deleteMode && (
+                      <div className="mt-2">
+                        <span className="text-sm font-medium">{getHabitProgress(habit)}</span>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+      
+            <div className="flex justify-center items-center mt-6">
+              {!deleteMode && (
+                <button 
+                  onClick={() => setIsModalOpen(true)} 
+                  className="px-4 py-2 bg-[var(--main-color)] text-white rounded-full shadow-md hover:bg-opacity-90 transition-colors duration-200 flex items-center"
+                >
+                  <IoMdAdd className="mr-2" />
+                  Add Habit 
+                </button>
+              )}
+  
+              <button 
+                onClick={() => setDeleteMode(!deleteMode)} 
+                className={`px-4 py-2 ${deleteMode ? 'bg-[var(--error-color)]' : 'bg-[var(--main-color)]'} text-white rounded-full shadow-md hover:bg-opacity-90 transition-colors duration-200 ml-4 flex items-center`}
+              >
+                {deleteMode ? 'Done' : 'Delete'}
+              </button>
+            </div>
+  
+            {isModalOpen && (
+              <AddHabitModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onAddHabit={addHabit}
+              />
+            )}
+            {selectedHabit && (
+              <HabitStats
+                habit={selectedHabit}
+                onClose={() => setSelectedHabit(null)}
+                updateHabit={updateHabit}
+              />
+            )}
+            {showConfetti && (
+              <Confetti 
+                generationDuration={200}
+              />
+            )}
+            
+            {showCongrats && (
+              <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+                <div className="bg-white p-8 rounded-lg shadow-xl max-w-md text-center relative">
+                  <button 
+                    onClick={() => setShowCongrats(false)}
+                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                    aria-label="Close"
+                  >
+                    <IoMdClose size={24} />
+                  </button>
+                  <FaTrophy className="text-yellow-400 text-5xl mx-auto mb-4" />
+                  <h2 className="text-2xl font-bold text-green-600 mb-4">All done for today!</h2>
+                  <p className="text-lg text-gray-700 mb-6">
+                    Congratulations! You've completed all your habits for today.
+                  </p>
+                  <p className="text-lg text-gray-700 mb-6">
+                    Enjoy and rest up - let's do this again tomorrow!
+                  </p>
+                  
+                  <button 
+                    onClick={triggerConfetti}
+                    className="px-4 py-2 bg-yellow-400 text-blue-600 rounded-full shadow-md hover:bg-yellow-300 transition-colors duration-200 flex items-center justify-center mx-auto"
+                    title="Celebrate again!"
+                  >
+                    <FaCrown size={20} className="mr-2" />
+                    Celebrate!
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        ) : status === "loading" ? (
+          <p className="text-center">Loading...</p>
+        ) : (
+          <div className="text-center">
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold mb-4">Welcome to habits.</h2>
+              <p className="text-lg mb-6">Track your daily habits and build a better you.</p>
+              <div className="flex justify-center space-x-4">
+                <LoginButton />
+                
+              </div>
+            </div>
+            
+            {/* Habit Preview Section */}
+            <div className="mt-12 bg-white p-6 rounded-lg shadow-md">
+              <h3 className="text-xl font-semibold mb-4">Preview of Your Habit Tracker</h3>
+              <ul className="space-y-4">
+                {[
+                  { name: "Morning Run", type: "habit", progress: "1/1" },
+                  { name: "Meditate", type: "timed_habit", progress: "15/20 minutes" },
+                  { name: "No Snoozing", type: "bad_habit", progress: "0/3 occurrences" }
+                ].map((habit, index) => (
+                  <li key={index} className="p-4 bg-gray-100 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-semibold flex items-center">
+                        {habit.type === 'habit' ? <FaCheck className="text-blue-500 mr-2" /> :
+                         habit.type === 'bad_habit' ? <FaTimes className="text-red-500 mr-2" /> :
+                         <FaClock className="text-blue-500 mr-2" />}
+                        {habit.name}
+                      </span>
+                      <span className="text-sm font-medium">{habit.progress}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </main>
   );
+
 }

@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]/route";
 
 // GET all habits
 export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const habits = await prisma.habit.findMany({
-      where: { isActive: true },
+      where: { userId: session.user.id, isActive: true },
       include: { logs: true },
     });
     return NextResponse.json(habits);
@@ -15,9 +22,13 @@ export async function GET() {
   }
 }
 
-
-
+// POST (create) habit
 export async function POST(request) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const data = await request.json();
     const habit = await prisma.habit.create({
@@ -28,6 +39,7 @@ export async function POST(request) {
         timeGoal: data.type === 'timed_habit' ? data.target : null,
         missesAllowed: data.type === 'bad_habit' ? data.target : null,
         isActive: true,
+        userId: session.user.id,
       },
     });
     return NextResponse.json(habit);
@@ -37,18 +49,23 @@ export async function POST(request) {
   }
 }
 
-
 // PUT (update) habit
 export async function PUT(request) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const data = await request.json();
     const updatedHabit = await prisma.habit.update({
-      where: { id: data.id },
+      where: { id: data.id, userId: session.user.id },
       data: {
         name: data.name,
         type: data.type,
-        target: data.target,
-        unit: data.unit,
+        timesPerDay: data.type === 'habit' ? data.target : 1,
+        timeGoal: data.type === 'timed_habit' ? data.target : null,
+        missesAllowed: data.type === 'bad_habit' ? data.target : null,
         isActive: data.isActive,
       },
     });
@@ -60,6 +77,11 @@ export async function PUT(request) {
 }
 
 export async function DELETE(request) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const habitId = searchParams.get('id');
@@ -77,20 +99,20 @@ export async function DELETE(request) {
     const deletedHabit = await prisma.$transaction(async (prisma) => {
       // First, delete all logs associated with this habit
       await prisma.log.deleteMany({
-        where: { habitId: parsedHabitId }
+        where: { habitId: parsedHabitId, habit: { userId: session.user.id } }
       });
       
       // Then, delete the habit
-      return prisma.habit.delete({
-        where: { id: parsedHabitId }
+      return prisma.habit.deleteMany({
+        where: { id: parsedHabitId, userId: session.user.id }
       });
     });
     
-    if (!deletedHabit) {
-      return NextResponse.json({ error: 'Habit not found' }, { status: 404 });
+    if (deletedHabit.count === 0) {
+      return NextResponse.json({ error: 'Habit not found or unauthorized' }, { status: 404 });
     }
     
-    return NextResponse.json(deletedHabit);
+    return NextResponse.json({ message: 'Habit deleted successfully' });
   } catch (error) {
     console.error('Error in DELETE /api/habits:', error);
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
@@ -98,17 +120,22 @@ export async function DELETE(request) {
 }
 
 export async function PATCH(request) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const data = await request.json();
     const { habitId, value, date } = data;
 
     const habit = await prisma.habit.findUnique({
-      where: { id: parseInt(habitId) },
+      where: { id: parseInt(habitId), userId: session.user.id },
       include: { logs: true },
     });
 
     if (!habit) {
-      return NextResponse.json({ error: 'Habit not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Habit not found or unauthorized' }, { status: 404 });
     }
 
     const existingLog = habit.logs.find(log => 
