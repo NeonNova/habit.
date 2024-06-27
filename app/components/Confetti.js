@@ -1,18 +1,28 @@
 import React, { useEffect, useRef } from 'react';
 
-const Confetti = () => {
+const Confetti = ({ generationDuration = 5000, mainColor = '#2d539e' }) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     let animationFrameId;
+    let isGenerating = true;
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
     const particles = [];
-    const colors = ['#2d539e']; // Only the specified color
+    const colors = [
+      mainColor,
+      "#608ede",
+      "#4f7ac8",
+      "#3e66b3",
+      "#2d539e",
+      "#1a3a85",
+      "#08216c",
+      "#000953"
+    ];
 
     class Particle {
       constructor() {
@@ -49,8 +59,13 @@ const Confetti = () => {
         this.grabAngle += this.grabSpeed;
 
         if (this.y > canvas.height || this.x < 0 || this.x > canvas.width) {
-          this.reset();
+          if (isGenerating) {
+            this.reset();
+          } else {
+            return false; // Remove particle if it's out of bounds and not generating
+          }
         }
+        return true;
       }
 
       draw() {
@@ -71,7 +86,7 @@ const Confetti = () => {
     }
 
     function createParticles() {
-      if (particles.length < 500) {
+      if (isGenerating && particles.length < 500) {
         for (let i = 0; i < 50; i++) {
           particles.push(new Particle());
         }
@@ -81,19 +96,27 @@ const Confetti = () => {
     function animateParticles() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       createParticles();
-      particles.forEach((particle) => {
-        particle.update();
-        particle.draw();
-      });
+      for (let i = particles.length - 1; i >= 0; i--) {
+        if (particles[i].update()) {
+          particles[i].draw();
+        } else {
+          particles.splice(i, 1);
+        }
+      }
       animationFrameId = requestAnimationFrame(animateParticles);
     }
 
     animateParticles();
 
+    // Stop generating new particles after the specified duration
+    setTimeout(() => {
+      isGenerating = false;
+    }, generationDuration);
+
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [generationDuration, mainColor]);
 
   return (
     <canvas
@@ -104,8 +127,6 @@ const Confetti = () => {
         left: 0,
         pointerEvents: 'none',
         zIndex: 9999,
-        border: '1px solid silver',
-         // Set background to opaque white
       }}
     />
   );

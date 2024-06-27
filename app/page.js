@@ -140,16 +140,12 @@ export default function Home() {
   const triggerCelebration = () => {
     setShowConfetti(true);
     setShowCongrats(true);
-    setTimeout(() => {
-      setShowConfetti(false);
-    }, 5000); // 5 seconds of confetti
+     // 5 seconds of confetti
   };
 
   const triggerConfetti = () => {
-    setShowConfetti(true);
-    setTimeout(() => {
-      setShowConfetti(false);
-    }, 5000); // 5 seconds of confetti
+    setShowConfetti(false); // Reset the state
+    setTimeout(() => setShowConfetti(true), 10); // Trigger confetti after a short delay
   };
 
   const getHabitProgress = (habit) => {
@@ -477,7 +473,7 @@ export default function Home() {
       )}
       {showConfetti && (
         <Confetti 
-          mainColor={getComputedStyle(document.documentElement).getPropertyValue('--main-color').trim()} 
+          generationDuration={200} // Adjust this value as needed
         />
       )}
       
@@ -494,7 +490,7 @@ export default function Home() {
             <FaTrophy className="text-yellow-400 text-5xl mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-green-600 mb-4">All done for today!</h2>
             <p className="text-lg text-gray-700 mb-6">
-            Congratulations! You've completed all your habits for today.
+              Congratulations! You've completed all your habits for today.
             </p>
             <p className="text-lg text-gray-700 mb-6">
               Enjoy and rest up - let's do this again tomorrow!
@@ -503,9 +499,8 @@ export default function Home() {
             <button 
               onClick={triggerConfetti}
               className="px-4 py-2 bg-yellow-400 text-blue-600 rounded-full shadow-md hover:bg-yellow-300 transition-colors duration-200 flex items-center justify-center mx-auto"
-              title="Celebrate again!"
-            >
-              <FaCrown size={20} className="mr-2" />
+              title="Celebrate again!">
+                <FaCrown size={20} className="mr-2" />
               Celebrate!
             </button>
           </div>
