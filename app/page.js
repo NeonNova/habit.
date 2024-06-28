@@ -505,10 +505,10 @@ export default function Home() {
                   <FaTrophy className="text-yellow-400 text-5xl mx-auto mb-4" />
                   <h2 className="text-2xl font-bold text-green-600 mb-4">All done for today!</h2>
                   <p className="text-lg text-gray-700 mb-6">
-                    Congratulations! You've completed all your habits for today.
+                    Congratulations! You&apos;ve completed all your habits for today.
                   </p>
                   <p className="text-lg text-gray-700 mb-6">
-                    Enjoy and rest up - let's do this again tomorrow!
+                    Enjoy and rest up - let&apos;s do this again tomorrow!
                   </p>
                   
                   <button 
