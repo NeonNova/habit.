@@ -7,6 +7,7 @@ import AddHabitModal from './components/AddHabitModal';
 import HabitStats from './components/HabitStats';
 import Confetti from './components/Confetti';
 import LoginButton from './components/LoginButton';
+import HeroSection from './components/HeroSection';
 import { FaCheck, FaTimes, FaClock, FaCrown, FaTrophy } from 'react-icons/fa';
 import { IoMdAdd, IoMdClose } from 'react-icons/io';
 
@@ -402,7 +403,8 @@ export default function Home() {
         </div>
       )}
       <div className="max-w-xl mx-auto px-4 py-8">
-        <h1 className="text-3xl text-center mb-2 text-var(--main-color) font-bold">habits.</h1>
+      {status === "authenticated" && (
+        <h1 className="text-3xl text-center mb-2 text-var(--main-color) font-bold">habits.</h1>)}
         
           
           {status === "authenticated" ? (
@@ -479,12 +481,11 @@ export default function Home() {
               />
             )}
             {selectedHabit && (
-              <HabitStats
-                habit={selectedHabit}
-                onClose={() => setSelectedHabit(null)}
-                updateHabit={updateHabit}
-              />
-            )}
+                <HabitStats
+                  habits={habits}
+                  onClose={() => setSelectedHabit(null)}
+                />
+              )}
             {showConfetti && (
               <Confetti 
                 generationDuration={200}
@@ -525,40 +526,7 @@ export default function Home() {
         ) : status === "loading" ? (
           <p className="text-center">Loading...</p>
         ) : (
-          <div className="text-center">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">Welcome to habits.</h2>
-              <p className="text-lg mb-6">Track your daily habits and build a better you.</p>
-              <div className="flex justify-center space-x-4">
-                <LoginButton />
-                
-              </div>
-            </div>
-            
-            {/* Habit Preview Section */}
-            <div className="mt-12 bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-xl font-semibold mb-4">Preview of Your Habit Tracker</h3>
-              <ul className="space-y-4">
-                {[
-                  { name: "Morning Run", type: "habit", progress: "1/1" },
-                  { name: "Meditate", type: "timed_habit", progress: "15/20 minutes" },
-                  { name: "No Snoozing", type: "bad_habit", progress: "0/3 occurrences" }
-                ].map((habit, index) => (
-                  <li key={index} className="p-4 bg-gray-100 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-semibold flex items-center">
-                        {habit.type === 'habit' ? <FaCheck className="text-blue-500 mr-2" /> :
-                         habit.type === 'bad_habit' ? <FaTimes className="text-red-500 mr-2" /> :
-                         <FaClock className="text-blue-500 mr-2" />}
-                        {habit.name}
-                      </span>
-                      <span className="text-sm font-medium">{habit.progress}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          <HeroSection />
         )}
       </div>
     </main>
