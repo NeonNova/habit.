@@ -4,8 +4,9 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://habit_user:password@localhost:5432/habit_tracker"
+  url      = env("DATABASE_URL")
 }
+
 
 model User {
   id            Int       @id @default(autoincrement())
