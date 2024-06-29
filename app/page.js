@@ -10,6 +10,7 @@ import LoginButton from './components/LoginButton';
 import HeroSection from './components/HeroSection';
 import { FaCheck, FaTimes, FaClock, FaCrown, FaTrophy } from 'react-icons/fa';
 import { IoMdAdd, IoMdClose } from 'react-icons/io';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -20,6 +21,8 @@ export default function Home() {
   const today = format(new Date(), 'dd MMM yy');
   const [showConfetti, setShowConfetti] = useState(false);
   const [showCongrats, setShowCongrats] = useState(false);
+  const [lastCompletedCount, setLastCompletedCount] = useState(0);
+
 
   useEffect(() => {
     if (session) {
@@ -62,6 +65,7 @@ export default function Home() {
       console.log('Created habit:', createdHabit); // Log the created habit
       setHabits([...habits, createdHabit]);
       setIsModalOpen(false);
+      setLastCompletedCount(0);
     } catch (error) {
       console.error('Error adding habit:', error);
       alert(error.message);
@@ -130,16 +134,17 @@ export default function Home() {
       }
     });
   
-      const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-      return { completedTasks, totalTasks, progressPercentage };
+    const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+    return { completedTasks, totalTasks, progressPercentage };
   }, [habits]);
 
   useEffect(() => {
-    const { progressPercentage } = calculateOverallProgress();
-    if (progressPercentage === 100) {
+    const { completedTasks, totalTasks, progressPercentage } = calculateOverallProgress();
+    if (progressPercentage === 100 && (completedTasks > lastCompletedCount || totalTasks > lastCompletedCount)) {
       triggerCelebration();
+      setLastCompletedCount(completedTasks);
     }
-  }, [calculateOverallProgress]);
+  }, [calculateOverallProgress, lastCompletedCount]);
 
   const triggerCelebration = () => {
     setShowConfetti(true);
@@ -396,43 +401,81 @@ export default function Home() {
   const { completedTasks, totalTasks, progressPercentage } = calculateOverallProgress();
   
   return (
-    <main className="bg-var(--bg-color) text-var(--text-color) min-h-screen font-mono relative">
+    <motion.main
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="bg-var(--bg-color) text-var(--text-color) min-h-screen font-mono relative"
+    >
       {status === "authenticated" && (
-        <div className="absolute top-4 right-4">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="absolute top-4 right-4"
+        >
           <LoginButton />
-        </div>
+        </motion.div>
       )}
       <div className="max-w-xl mx-auto px-4 py-8">
-      {status === "authenticated" && (
-        <h1 className="text-3xl text-center mb-2 text-var(--main-color) font-bold">habits.</h1>)}
-        
-          
-          {status === "authenticated" ? (
-          <>
+        {status === "authenticated" && (
+          <motion.h1
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-3xl text-center mb-2 text-var(--main-color) font-bold"
+          >
+            habits.
+          </motion.h1>
+        )}
+  
+        {status === "authenticated" ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
             <p className="text-center mb-6 text-var(--main-color) text-xl">{today}</p>
-            
+  
             {/* Overall Progress Bar */}
-            <div className="mb-8">
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+              className="mb-8"
+            >
               <div className="flex items-center justify-center mb-2">
                 <span className="text-lg font-medium">Progress: {completedTasks}/{totalTasks}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                <div 
+                <motion.div 
                   className="bg-blue-600 h-2.5 rounded-full" 
                   style={{ width: `${progressPercentage}%` }}
-                ></div>
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progressPercentage}%` }}
+                  transition={{ delay: 0.5, duration: 0.5 }}
+                ></motion.div>
               </div>
-            </div>
+            </motion.div>
   
-            <ul className="space-y-4 mb-8">
+            <motion.ul
+              className="space-y-4 mb-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6, staggerChildren: 0.1 }}
+            >
               {habits.map((habit) => {
                 const habitIcon = habit.type === 'habit' ? <FaCheck className={`${deleteMode ? 'text-white' : 'text-[var(--main-color)]'}`} /> :
                                   habit.type === 'bad_habit' ? <FaTimes className={`${deleteMode ? 'text-white' : 'text-[var(--error-color)]'}`} /> :
                                   <FaClock className={`${deleteMode ? 'text-white' : 'text-[var(--main-color)]'}`} />;
                 
                 return (
-                  <li
+                  <motion.li
                     key={habit.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     className={`p-4 rounded-lg shadow-md text-[var(--text-color)] habit-item cursor-pointer
                                 ${deleteMode ? 'bg-red-500 hover:bg-red-600' : 'bg-white'}`}
                     onClick={() => deleteMode ? deleteHabit(habit.id) : setSelectedHabit(habit)}
@@ -449,87 +492,109 @@ export default function Home() {
                         <span className="text-sm font-medium">{getHabitProgress(habit)}</span>
                       </div>
                     )}
-                  </li>
+                  </motion.li>
                 );
               })}
-            </ul>
-      
-            <div className="flex justify-center items-center mt-6">
+            </motion.ul>
+  
+            <motion.div
+              className="flex justify-center items-center mt-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+            >
               {!deleteMode && (
-                <button 
+                <motion.button 
                   onClick={() => setIsModalOpen(true)} 
                   className="px-4 py-2 bg-[var(--main-color)] text-white rounded-full shadow-md hover:bg-opacity-90 transition-colors duration-200 flex items-center"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <IoMdAdd className="mr-2" />
                   Add Habit 
-                </button>
+                </motion.button>
               )}
   
-              <button 
+              <motion.button 
                 onClick={() => setDeleteMode(!deleteMode)} 
                 className={`px-4 py-2 ${deleteMode ? 'bg-[var(--error-color)]' : 'bg-[var(--main-color)]'} text-white rounded-full shadow-md hover:bg-opacity-90 transition-colors duration-200 ml-4 flex items-center`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 {deleteMode ? 'Done' : 'Delete'}
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
   
-            {isModalOpen && (
-              <AddHabitModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onAddHabit={addHabit}
-              />
-            )}
-            {selectedHabit && (
+            <AnimatePresence>
+              {isModalOpen && (
+                <AddHabitModal
+                  isOpen={isModalOpen}
+                  onClose={() => setIsModalOpen(false)}
+                  onAddHabit={addHabit}
+                />
+              )}
+              {selectedHabit && (
                 <HabitStats
                   habits={habits}
                   onClose={() => setSelectedHabit(null)}
                 />
               )}
-            {showConfetti && (
-              <Confetti 
-                generationDuration={200}
-              />
-            )}
-            
-            {showCongrats && (
-              <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-                <div className="bg-white p-8 rounded-lg shadow-xl max-w-md text-center relative">
-                  <button 
-                    onClick={() => setShowCongrats(false)}
-                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-                    aria-label="Close"
-                  >
-                    <IoMdClose size={24} />
-                  </button>
-                  <FaTrophy className="text-yellow-400 text-5xl mx-auto mb-4" />
-                  <h2 className="text-2xl font-bold text-green-600 mb-4">All done for today!</h2>
-                  <p className="text-lg text-gray-700 mb-6">
-                    Congratulations! You&apos;ve completed all your habits for today.
-                  </p>
-                  <p className="text-lg text-gray-700 mb-6">
-                    Enjoy and rest up - let&apos;s do this again tomorrow!
-                  </p>
-                  
-                  <button 
-                    onClick={triggerConfetti}
-                    className="px-4 py-2 bg-yellow-400 text-blue-600 rounded-full shadow-md hover:bg-yellow-300 transition-colors duration-200 flex items-center justify-center mx-auto"
-                    title="Celebrate again!"
-                  >
-                    <FaCrown size={20} className="mr-2" />
-                    Celebrate!
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
+              </AnimatePresence>
+              <AnimatePresence>
+              {showConfetti && (
+                <Confetti generationDuration={200} />
+              )}
+              {showCongrats && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50"
+                >
+                  <div className="bg-white p-8 rounded-lg shadow-xl max-w-md text-center relative">
+                    <button 
+                      onClick={() => setShowCongrats(false)}
+                      className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                      aria-label="Close"
+                    >
+                      <IoMdClose size={24} />
+                    </button>
+                    <FaTrophy className="text-yellow-400 text-5xl mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold text-green-600 mb-4">All done for today!</h2>
+                    <p className="text-lg text-gray-700 mb-6">
+                      Congratulations! You&apos;ve completed all your habits for today.
+                    </p>
+                    <p className="text-lg text-gray-700 mb-6">
+                      Enjoy and rest up - let&apos;s do this again tomorrow!
+                    </p>
+                    <button 
+                      onClick={triggerConfetti}
+                      className="px-4 py-2 bg-yellow-400 text-blue-600 rounded-full shadow-md hover:bg-yellow-300 transition-colors duration-200 flex items-center justify-center mx-auto"
+                      title="Celebrate again!"
+                    >
+                      <FaCrown size={20} className="mr-2" />
+                      Celebrate!
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         ) : status === "loading" ? (
-          <p className="text-center">Loading...</p>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center"
+          >
+            Loading...
+          </motion.p>
         ) : (
           <HeroSection />
         )}
       </div>
-    </main>
+    </motion.main>
   );
+  
+  
 
 }
