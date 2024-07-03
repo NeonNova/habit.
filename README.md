@@ -4,7 +4,7 @@ A sleek and minimalist habit-tracking application built with Next.js and React.
 
 The application is live and can be accessed at https://habit-alpha.vercel.app/
 
-![Habit Tracker Screenshot](screenshot1.jpeg)
+![Habit Tracker Screenshot](screenshot1.png)
 
 ## 🌟 Features
 
