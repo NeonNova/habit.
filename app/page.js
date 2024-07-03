@@ -11,6 +11,8 @@ import HeroSection from './components/HeroSection';
 import { FaCheck, FaTimes, FaClock, FaCrown, FaTrophy } from 'react-icons/fa';
 import { IoMdAdd, IoMdClose } from 'react-icons/io';
 import { motion, AnimatePresence } from 'framer-motion';
+import HabitInput from './components/HabitInput';
+
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -266,22 +268,23 @@ export default function Home() {
               </button>
             </>
           );
-        case 'timed_habit':
-          return (
-            <input
-              type="range"
-              min="0"
-              max={habit.timeGoal}
-              value={completions}
-              onChange={(e) => {
-                e.stopPropagation();
-                const newValue = parseInt(e.target.value);
-                logHabit(habit, newValue - completions);
-              }}
-              disabled={deleteMode}
-              className="w-full"
-            />
-          );
+          case 'timed_habit':
+            return (
+              <input
+                type="range"
+                min="0"
+                max={habit.timeGoal}
+                value={completions}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  const newValue = parseInt(e.target.value);
+                  logHabit(habit, newValue - completions);
+                }}
+                onClick={(e) => e.stopPropagation()} // Prevent opening HabitStats
+                disabled={deleteMode}
+                className="w-full cursor-pointer"
+              />
+            );
         case 'bad_habit':
           return (
             <>
@@ -313,7 +316,7 @@ export default function Home() {
     };
   
     return (
-      <div className="flex items-center">
+      <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
         {renderInput()}
       </div>
     );
