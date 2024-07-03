@@ -2,7 +2,9 @@
 
 A sleek and minimalist habit-tracking application built with Next.js and React.
 
-![Habit Tracker Screenshot](screenshot2.jpeg)
+The application is live and can be accessed at https://habit-alpha.vercel.app/
+
+![Habit Tracker Screenshot](screenshot1.jpeg)
 
 ## 🌟 Features
 
@@ -11,10 +13,12 @@ A sleek and minimalist habit-tracking application built with Next.js and React.
   - Timed habits
   - Bad habits (for breaking negative patterns)
 - **Intuitive UI**: Clean and user-friendly interface for easy habit management
-- **Progress Visualization**: Visual progress bars for each habit and overall daily progress
+- **Progress Visualization**: Visual progress bars for each habit and daily streaks 
 - **Customizable**: Add, edit, and delete habits as needed
 - **Daily Reset**: Fresh start every day to keep you motivated
 - **Celebration**: Confetti animation when all habits are completed for the day
+
+![Habit Tracker Screenshot](screenshot2.jpeg)
 
 ## 🛠️ Tech Stack
 
@@ -22,6 +26,7 @@ A sleek and minimalist habit-tracking application built with Next.js and React.
 - React
 - Tailwind CSS
 - Prisma (for database management)
+- PostgreSQL (via Supabase)
 - React Icons
 
 ## 🚀 Getting Started
